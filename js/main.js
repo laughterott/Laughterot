@@ -33,20 +33,45 @@ if (photos) {
   photos.addEventListener('error', function(){ setTimeout(tidy, 0); }, true);
   window.addEventListener('load', tidy);
   var lb = document.querySelector('.lightbox');
-  photos.querySelectorAll('.ph-btn').forEach(function (b) {
+  var btns = Array.prototype.slice.call(photos.querySelectorAll('.ph-btn'));
+  var cur = 0;
+  function visible() {
+    return btns.filter(function (b) { var f = b.closest('figure'); return !(f && f.hidden); })
+      .sort(function (a, b) { return (parseInt(a.closest('figure').style.order, 10) || 0) - (parseInt(b.closest('figure').style.order, 10) || 0); });
+  }
+  function show(i) {
+    var list = visible(); if (!list.length) return;
+    cur = (i + list.length) % list.length;
+    var b = list[cur], img = b.querySelector('img'), big = lb.querySelector('img');
+    big.src = img.dataset.full || img.src; big.alt = img.alt;
+    var cap = b.parentElement.querySelector('figcaption');
+    lb.querySelector('.lb-cap').textContent = cap ? cap.textContent : '';
+    lb.querySelector('.lb-count').textContent = (cur + 1) + ' / ' + list.length;
+  }
+  btns.forEach(function (b) {
     b.addEventListener('click', function () {
-      var img = b.querySelector('img');
-      if (!img || !lb || !lb.showModal) return;
-      lb.querySelector('img').src = img.dataset.full || img.src;
-      lb.querySelector('img').alt = img.alt;
-      var cap = b.parentElement.querySelector('figcaption');
-      lb.querySelector('.lb-cap').textContent = cap ? cap.textContent : '';
+      if (!lb || !lb.showModal) return;
+      show(visible().indexOf(b));
       lb.showModal();
     });
   });
   if (lb) {
     lb.querySelector('.lb-close').addEventListener('click', function () { lb.close(); });
+    lb.querySelector('.lb-prev').addEventListener('click', function (e) { e.stopPropagation(); show(cur - 1); });
+    lb.querySelector('.lb-next').addEventListener('click', function (e) { e.stopPropagation(); show(cur + 1); });
     lb.addEventListener('click', function (e) { if (e.target === lb) lb.close(); });
+    lb.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight') { e.preventDefault(); show(cur + 1); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); show(cur - 1); }
+    });
+    var sx = null, sy = null;
+    lb.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+    lb.addEventListener('touchend', function (e) {
+      if (sx === null) return;
+      var dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) show(dx < 0 ? cur + 1 : cur - 1);
+      sx = null;
+    });
   }
 }
 
