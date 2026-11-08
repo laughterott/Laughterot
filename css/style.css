@@ -380,3 +380,8 @@ form textarea{min-height:160px;resize:vertical}
 .hero-art{position:absolute;right:calc(var(--gutter) + clamp(0px,1.5vw,20px));top:clamp(70px,6vw,110px);width:clamp(190px,22vw,300px);aspect-ratio:1;height:auto;pointer-events:none}
 .hero-art svg{width:100%;height:100%;overflow:visible}
 @media (max-width:899px){.hero-art{display:none}}
+
+.shots.trio{grid-template-columns:repeat(3,minmax(0,1fr))}
+.shots.trio figure{grid-column:auto}
+.shots.trio .media{aspect-ratio:4/3}
+@media (max-width:700px){.shots.trio{grid-template-columns:1fr}}
