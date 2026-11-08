@@ -32,48 +32,49 @@ if (photos) {
   }
   photos.addEventListener('error', function(){ setTimeout(tidy, 0); }, true);
   window.addEventListener('load', tidy);
+}
+
+// Lightbox: open any photo in a .photos or .gallery block full size, with next/previous
+(function () {
   var lb = document.querySelector('.lightbox');
-  var btns = Array.prototype.slice.call(photos.querySelectorAll('.ph-btn'));
-  var cur = 0;
-  function visible() {
-    return btns.filter(function (b) { var f = b.closest('figure'); return !(f && f.hidden); })
+  if (!lb || !lb.showModal) return;
+  var list = [], cur = 0;
+  function visible(g) {
+    return Array.prototype.slice.call(g.querySelectorAll('.ph-btn'))
+      .filter(function (b) { var f = b.closest('figure'); return !(f && f.hidden); })
       .sort(function (a, b) { return (parseInt(a.closest('figure').style.order, 10) || 0) - (parseInt(b.closest('figure').style.order, 10) || 0); });
   }
   function show(i) {
-    var list = visible(); if (!list.length) return;
+    if (!list.length) return;
     cur = (i + list.length) % list.length;
     var b = list[cur], img = b.querySelector('img'), big = lb.querySelector('img');
     big.src = img.dataset.full || img.src; big.alt = img.alt;
-    var cap = b.parentElement.querySelector('figcaption');
+    var cap = b.closest('figure') && b.closest('figure').querySelector('figcaption');
     lb.querySelector('.lb-cap').textContent = cap ? cap.textContent : '';
     lb.querySelector('.lb-count').textContent = (cur + 1) + ' / ' + list.length;
   }
-  btns.forEach(function (b) {
-    b.addEventListener('click', function () {
-      if (!lb || !lb.showModal) return;
-      show(visible().indexOf(b));
-      lb.showModal();
+  document.querySelectorAll('.photos, .gallery').forEach(function (g) {
+    g.querySelectorAll('.ph-btn').forEach(function (b) {
+      b.addEventListener('click', function () { list = visible(g); show(list.indexOf(b)); lb.showModal(); });
     });
   });
-  if (lb) {
-    lb.querySelector('.lb-close').addEventListener('click', function () { lb.close(); });
-    lb.querySelector('.lb-prev').addEventListener('click', function (e) { e.stopPropagation(); show(cur - 1); });
-    lb.querySelector('.lb-next').addEventListener('click', function (e) { e.stopPropagation(); show(cur + 1); });
-    lb.addEventListener('click', function (e) { if (e.target === lb) lb.close(); });
-    lb.addEventListener('keydown', function (e) {
-      if (e.key === 'ArrowRight') { e.preventDefault(); show(cur + 1); }
-      else if (e.key === 'ArrowLeft') { e.preventDefault(); show(cur - 1); }
-    });
-    var sx = null, sy = null;
-    lb.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
-    lb.addEventListener('touchend', function (e) {
-      if (sx === null) return;
-      var dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
-      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) show(dx < 0 ? cur + 1 : cur - 1);
-      sx = null;
-    });
-  }
-}
+  lb.querySelector('.lb-close').addEventListener('click', function () { lb.close(); });
+  lb.querySelector('.lb-prev').addEventListener('click', function (e) { e.stopPropagation(); show(cur - 1); });
+  lb.querySelector('.lb-next').addEventListener('click', function (e) { e.stopPropagation(); show(cur + 1); });
+  lb.addEventListener('click', function (e) { if (e.target === lb) lb.close(); });
+  lb.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight') { e.preventDefault(); show(cur + 1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); show(cur - 1); }
+  });
+  var sx = null, sy = null;
+  lb.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+  lb.addEventListener('touchend', function (e) {
+    if (sx === null) return;
+    var dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) show(dx < 0 ? cur + 1 : cur - 1);
+    sx = null;
+  });
+})();
 
 // Contact form (FormSubmit: messages go to the portfolio owner's email)
 var form = document.querySelector('#contact-form');
